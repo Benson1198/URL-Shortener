@@ -55,16 +55,27 @@ com.benson.urlshortener
 ---
 🛠️ Tech Stack
 Layer	Technology
+
 Language	Java 21
+
 Framework	Spring Boot
+
 Database	PostgreSQL
+
 Caching	Redis
+
 Messaging	Apache Kafka
+
 Security	JWT (JSON Web Tokens)
+
 ORM	Hibernate / JPA
+
 Containerization	Docker & Docker Compose
+
 Build Tool	Maven
+
 Utilities	Lombok, Spring DevTools, Spring Validation
+
 ---
 📊 Performance Benchmarks
 Metric	Result
@@ -80,8 +91,11 @@ URL records (load tested)	1M+
 ---
 📋 Prerequisites
 Java 21+
+
 Maven 3.8+
+
 Docker Desktop
+
 ---
 ⚙️ Getting Started
 1. Clone the repository
@@ -180,13 +194,21 @@ app.jwt.expiration=86400000
 ---
 🗂️ Roadmap
 [x] Foundation — Spring Boot REST API + PostgreSQL + layered architecture
+
 [x] Redis Caching — Sub-10ms redirect latency
+
 [ ] Click Analytics — Kafka-based async event pipeline
+
 [ ] JWT Security — Token-based API authentication
+
 [ ] Docker — Full containerized stack
+
 [ ] Load Testing — JMeter benchmarks
+
 [ ] Rate Limiting — Per-user request throttling
+
 [ ] Custom Short Codes — User-defined aliases
+
 ---
 📄 License
 MIT
