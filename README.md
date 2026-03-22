@@ -4,6 +4,7 @@
 🔗 Repo: github.com/Benson1198/URL-Shortener
 ---
 🚀 Features
+
 URL Shortening — Generate unique short codes with collision-safe encoding
 
 Fast Redirects — Sub-10ms redirect latency via Redis caching (~95% cache hit rate)
@@ -54,6 +55,7 @@ com.benson.urlshortener
 ```
 ---
 🛠️ Tech Stack
+
 Layer	Technology
 
 Language	Java 21
@@ -78,6 +80,7 @@ Utilities	Lombok, Spring DevTools, Spring Validation
 
 ---
 📊 Performance Benchmarks
+
 Metric	Result
 Redirect throughput	10,000+ requests/min
 Latency — cache hit	< 10ms
@@ -90,6 +93,7 @@ URL records (load tested)	1M+
 > Benchmarks measured locally using Apache JMeter. Results may vary based on hardware.
 ---
 📋 Prerequisites
+
 Java 21+
 
 Maven 3.8+
@@ -155,10 +159,15 @@ Authorization: Bearer <token>
 ---
 🐳 Docker
 `docker-compose.yml` provisions:
+
 Service	Port
+
 PostgreSQL	5432
+
 Redis	6379
+
 Kafka	9092
+
 Zookeeper	2181
 ```bash
 # Start all services
@@ -193,6 +202,7 @@ app.jwt.expiration=86400000
 ```
 ---
 🗂️ Roadmap
+
 [x] Foundation — Spring Boot REST API + PostgreSQL + layered architecture
 
 [x] Redis Caching — Sub-10ms redirect latency
