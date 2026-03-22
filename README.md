@@ -5,12 +5,19 @@
 ---
 🚀 Features
 URL Shortening — Generate unique short codes with collision-safe encoding
+
 Fast Redirects — Sub-10ms redirect latency via Redis caching (~95% cache hit rate)
+
 Click Analytics — Async event pipeline via Apache Kafka; tracks clicks without blocking redirects
+
 JWT Authentication — Stateless, token-based API security
+
 Containerized Stack — Full environment spins up with a single `docker-compose up`
+
 Health Monitoring — Spring Actuator endpoints for health checks and metrics
+
 Input Validation — End-to-end request validation using Spring Validation
+
 ---
 🏗️ Architecture
 ```
