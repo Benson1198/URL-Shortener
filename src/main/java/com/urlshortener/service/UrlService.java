@@ -71,22 +71,22 @@ public class UrlService {
         return url.getOriginalUrl();
     }
 
-    public UrlResponse getInfo(String shortCode){
+    public UrlResponse getInfo(String shortCode) {
         Url url = urlRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> 
-                new RuntimeException("URL not found: " + shortCode));
+                .orElseThrow(() -> new RuntimeException("URL not found: " + shortCode));
 
-                return toResponse(url);
+        return toResponse(url);
     }
 
-    private UrlResponse toResponse(Url url){
+    private UrlResponse toResponse(Url url) {
         return UrlResponse.builder()
                 .shortCode(url.getShortCode())
                 .originalUrl(url.getOriginalUrl())
-                .shortUrl("http://localhost/api/v1/urls/" + url.getShortCode())
+                .shortUrl("http://localhost:8080/api/v1/urls/" + url.getShortCode())
                 .clickCount(url.getClickCount())
-                .createdAt(url.getCreatedAt() != null 
-            ? url.getCreatedAt().toString() : null)
-            .build();
+                .createdAt(url.getCreatedAt() != null
+                        ? url.getCreatedAt().toString()
+                        : null)
+                .build();
     }
 }
