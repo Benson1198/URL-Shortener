@@ -7,6 +7,8 @@ import com.urlshortener.util.Base62Encoder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
+
 import javax.management.RuntimeErrorException;
 
 import org.springframework.stereotype.Service;
@@ -27,12 +29,39 @@ public class UrlService {
             }
         }
 
+        // Save with temp code to get the DB-generated Id
         Url url = Url.builder()
                 .originalUrl(request.getOriginalUrl())
                 .shortCode("temp")
                 .customAlias(request.getCustomAlias())
                 .build();
         url = urlRepository.save(url);
+
+        // Generate short code from DB Id (or use custom alias)
+        String shortCode = (request.getCustomAlias() != null &&
+                !request.getCustomAlias().isBlank())
+                        ? request.getCustomAlias()
+                        : base62Encoder.encode(url.getId());
+
+        // Update with real shortCode
+        url.setShortCode(shortCode);
+        url = urlRepository.save(url);
+
+        log.info("Shortened URL: {} -> {}", request.getOriginalUrl(), shortCode);
+        return toResponse(url);
+
+    }
+
+    public String resolve(String shortCode) {
+
+        Url url = urlRepository.findByShortCode(shortCode)
+                .orElseThrow(() -> new RuntimeException("Url not found: " + shortCode));
+
+        // Check if expired
+        if (url.getExpiresAt() != null &&
+                url.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("URL has expired: " + shortCode);
+        }
 
     }
 
