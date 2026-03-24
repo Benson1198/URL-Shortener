@@ -1,6 +1,7 @@
 package com.urlshortener.service;
 
 import com.urlshortener.dto.ShortenRequest;
+import com.urlshortener.dto.UrlResponse;
 import com.urlshortener.model.Url;
 import com.urlshortener.repository.UrlRepository;
 import com.urlshortener.util.Base62Encoder;
@@ -63,26 +64,29 @@ public class UrlService {
             throw new RuntimeException("URL has expired: " + shortCode);
         }
 
+        // Increment click count
+        url.setClickCount(url.getClickCount() + 1);
+        urlRepository.save(url);
+
+        return url.getOriginalUrl();
     }
 
-    // public Url shorten(String originalUrl) {
-    // Url url = Url.builder() // Save with empty short code first to get
-    // DB-generated ID
-    // .originalUrl(originalUrl)
-    // .shortCode("temp")
-    // .build();
+    public UrlResponse getInfo(String shortCode){
+        Url url = urlRepository.findByShortCode(shortCode)
+                .orElseThrow(() -> 
+                new RuntimeException("URL not found: " + shortCode));
 
-    // url = urlRepository.save(url);
+                return toResponse(url);
+    }
 
-    // String shortCode = base62Encoder.encode(url.getId()); // Use the DB ID to
-    // generate short code
-
-    // url.setShortCode(shortCode); // Update the record with the real short code
-    // return urlRepository.save(url);
-    // }
-
-    public Url resolve(String shortCode) {
-        return urlRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> new RuntimeException("URL not found for shortCode: " + shortCode));
+    private UrlResponse toResponse(Url url){
+        return UrlResponse.builder()
+                .shortCode(url.getShortCode())
+                .originalUrl(url.getOriginalUrl())
+                .shortUrl("http://localhost/api/v1/urls/" + url.getShortCode())
+                .clickCount(url.getClickCount())
+                .createdAt(url.getCreatedAt() != null 
+            ? url.getCreatedAt().toString() : null)
+            .build();
     }
 }
