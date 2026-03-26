@@ -2,6 +2,9 @@ package com.urlshortener.service;
 
 import com.urlshortener.dto.ShortenRequest;
 import com.urlshortener.dto.UrlResponse;
+import com.urlshortener.exception.AliasAlreadyExistsException;
+import com.urlshortener.exception.UrlExpiredException;
+import com.urlshortener.exception.UrlNotFoundException;
 import com.urlshortener.model.Url;
 import com.urlshortener.repository.UrlRepository;
 import com.urlshortener.util.Base62Encoder;
@@ -26,7 +29,7 @@ public class UrlService {
         // Check if custom alias is already taken
         if (request.getCustomAlias() != null && !request.getCustomAlias().isBlank()) {
             if (urlRepository.existsByCustomAlias(request.getCustomAlias())) {
-                throw new RuntimeException("Alias already exists: " + request.getCustomAlias());
+                throw new AliasAlreadyExistsException(request.getCustomAlias());
             }
         }
 
@@ -56,12 +59,12 @@ public class UrlService {
     public String resolve(String shortCode) {
 
         Url url = urlRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> new RuntimeException("Url not found: " + shortCode));
+                .orElseThrow(() -> new UrlNotFoundException(shortCode));
 
         // Check if expired
         if (url.getExpiresAt() != null &&
                 url.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("URL has expired: " + shortCode);
+            throw new UrlExpiredException(shortCode);
         }
 
         // Increment click count
@@ -73,7 +76,7 @@ public class UrlService {
 
     public UrlResponse getInfo(String shortCode) {
         Url url = urlRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> new RuntimeException("URL not found: " + shortCode));
+                .orElseThrow(() -> new UrlNotFoundException(shortCode));
 
         return toResponse(url);
     }
