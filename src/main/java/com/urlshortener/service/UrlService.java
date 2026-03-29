@@ -11,12 +11,15 @@ import com.urlshortener.util.Base62Encoder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.RuntimeErrorException;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,6 +29,10 @@ public class UrlService {
 
     private final UrlRepository urlRepository;
     private final Base62Encoder base62Encoder;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private static final String CACHE_PREFIX = "url:";
+    private static final long DEFAULT_TTL_HOURS = 1;
 
     public UrlResponse shorten(ShortenRequest request) {
         // Check if custom alias is already taken
@@ -35,11 +42,18 @@ public class UrlService {
             }
         }
 
+        // Parse expiresAt if provided
+        LocalDateTime expiresAt = null;
+        if (request.getExpiresAt() != null && !request.getExpiresAt().isBlank()) {
+            expiresAt = LocalDateTime.parse(request.getExpiresAt()); // expects "2026-04-01T00:00:00"
+        }
+
         // Save with temp code to get the DB-generated Id
         Url url = Url.builder()
                 .originalUrl(request.getOriginalUrl())
                 .shortCode("temp")
                 .customAlias(request.getCustomAlias())
+                .expiresAt(expiresAt)
                 .build();
         url = urlRepository.save(url);
 
@@ -58,10 +72,19 @@ public class UrlService {
 
     }
 
-    @Cacheable(value = "urls", key = "#shortCode")
     public String resolve(String shortCode) {
-        log.info("Cache MISS - hitting database for: {}", shortCode);
+        // Check Redis cache first
+        String cacheKey = CACHE_PREFIX + shortCode;
+        String cachedUrl = redisTemplate.opsForValue().get(cacheKey);
 
+        if (cachedUrl != null) {
+
+            log.info("Cache HIT for: {}", shortCode);
+            return cachedUrl;
+        }
+
+        // Cache miss - hit the database
+        log.info("Cache MISS for: {}", shortCode);
         Url url = urlRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new UrlNotFoundException(shortCode));
 
@@ -71,6 +94,15 @@ public class UrlService {
             throw new UrlExpiredException(shortCode);
         }
 
+        long ttlSeconds = calculateTtl(url);
+        redisTemplate.opsForValue().set(
+                cacheKey,
+                url.getOriginalUrl(),
+                ttlSeconds,
+                TimeUnit.SECONDS);
+
+        log.info("Cached {} with TTL {} seconds", shortCode, ttlSeconds);
+
         // Increment click count
         url.setClickCount(url.getClickCount() + 1);
         urlRepository.save(url);
@@ -78,12 +110,17 @@ public class UrlService {
         return url.getOriginalUrl();
     }
 
-    @CacheEvict(value = "urls", key = "#shortCode")
     public void deleteUrl(String shortCode) {
-        log.info("Evicting cache for: {}", shortCode);
         Url url = urlRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new UrlNotFoundException(shortCode));
+
+        // Evict from cache
+        String cacheKey = CACHE_PREFIX + shortCode;
+        redisTemplate.delete(cacheKey);
+        log.info("Evicted cache for: {}", shortCode);
+
         urlRepository.delete(url);
+        log.info("Deleted URL: {}", shortCode);
     }
 
     public UrlResponse getInfo(String shortCode) {
@@ -91,6 +128,17 @@ public class UrlService {
                 .orElseThrow(() -> new UrlNotFoundException(shortCode));
 
         return toResponse(url);
+    }
+
+    // Calculate TTL - aligns with URL expiry or defaults to 1 hour
+    private long calculateTtl(Url url) {
+        if (url.getExpiresAt() == null) {
+            return TimeUnit.HOURS.toSeconds(DEFAULT_TTL_HOURS); // 3600 seconds
+        }
+        long secondsUntilExpiry = Duration.between(LocalDateTime.now(), url.getExpiresAt()).getSeconds();
+
+        // If expiry is in the past, use very short TTL
+        return Math.max(secondsUntilExpiry, 1);
     }
 
     private UrlResponse toResponse(Url url) {
