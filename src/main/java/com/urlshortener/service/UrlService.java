@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 
 import javax.management.RuntimeErrorException;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -56,7 +58,9 @@ public class UrlService {
 
     }
 
+    @Cacheable(value = "urls", key = "#shortCode")
     public String resolve(String shortCode) {
+        log.info("Cache MISS - hitting database for: {}", shortCode);
 
         Url url = urlRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new UrlNotFoundException(shortCode));
@@ -72,6 +76,14 @@ public class UrlService {
         urlRepository.save(url);
 
         return url.getOriginalUrl();
+    }
+
+    @CacheEvict(value = "urls", key = "#shortCode")
+    public void deleteUrl(String shortCode) {
+        log.info("Evicting cache for: {}", shortCode);
+        Url url = urlRepository.findByShortCode(shortCode)
+                .orElseThrow(() -> new UrlNotFoundException(shortCode));
+        urlRepository.delete(url);
     }
 
     public UrlResponse getInfo(String shortCode) {
