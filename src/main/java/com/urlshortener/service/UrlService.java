@@ -30,7 +30,6 @@ public class UrlService {
     private final UrlRepository urlRepository;
     private final Base62Encoder base62Encoder;
     private final RedisTemplate<String, String> redisTemplate;
-
     private static final String CACHE_PREFIX = "url:";
     private static final long DEFAULT_TTL_HOURS = 1;
 

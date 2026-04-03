@@ -3,8 +3,10 @@ package com.urlshortener.controller;
 import com.urlshortener.dto.ShortenRequest;
 import com.urlshortener.dto.UrlResponse;
 import com.urlshortener.model.Url;
+import com.urlshortener.service.AnalyticsService;
 import com.urlshortener.service.UrlService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +32,7 @@ import java.time.LocalDateTime;
 public class UrlController {
 
     private final UrlService urlService;
+    private final AnalyticsService analyticsService;
 
     @PostMapping("/shorten")
     public ResponseEntity<UrlResponse> shorten(@Valid @RequestBody ShortenRequest request) {
@@ -39,9 +42,11 @@ public class UrlController {
     }
 
     @GetMapping("/{shortCode}")
-    public ResponseEntity<Void> redirect(
-            @PathVariable String shortCode) {
+    public ResponseEntity<Void> redirect(@PathVariable String shortCode, HttpServletRequest request) {
         String originalUrl = urlService.resolve(shortCode);
+
+        // Fire and forget - doesn't block the redirect
+        analyticsService.recordClick(shortCode, request);
 
         return ResponseEntity
                 .status(HttpStatus.FOUND)
