@@ -15,15 +15,34 @@ public interface ClickEventRepository extends JpaRepository<ClickEvent, Long> {
     // Total clicks for a short code
     Long countByShortCode(String shortCode);
 
+    // Unique IPs for a short code
+    @Query("SELECT COUNT(DISTINCT c.ipAddress) FROM ClickEvent c WHERE c.shortCode = :code")
+    Long countUniqueIps(@Param("code") String shortCode);
+
+    // Clicks per day for last N days
+    // Return Object[] where [0]=date string, [1]=count
+    @Query("SELECT CAST(c.clickedAt AS date), COUNT(c) FROM ClickEvent c WHERE c.shortCode = :code AND c.clickedAt >= :since "
+            +
+            "GROUP BY CAST(c.clickedAt AS date) ORDER BY CAST(c.clickedAt AS date) ASC")
+    List<Object[]> countClicksByDate(@Param("code") String shortCode, @Param("since") LocalDateTime since);
+
+    // Clicks grouped by device
+    @Query("SELECT c.device, COUNT(c) FROM ClickEvent c WHERE c.shortCode = :code GROUP BY c.device ORDER BY COUNT(c) DESC")
+    List<Object[]> countClicksByDevice(@Param("code") String shortCode);
+
+    // ------------------------------------------------------------------------------
+
     // All clicks for a short code ordered by time
-    List<ClickEvent> findByShortCodeOrderByClickedAtDesc(String shortCode);
+    // List<ClickEvent> findByShortCodeOrderByClickedAtDesc(String shortCode);
 
     // Clicks after a certain date(for last 30 days queries)
-    @Query("SELECT c FROM ClickEvent c WHERE c.shortCode = :code " +
-            "AND c.clickedAt >= :since ORDER BY c.clickedAt DESC")
-    List<ClickEvent> findByShortCodeSince(@Param("code") String shortCode, @Param("since") LocalDateTime since);
+    // @Query("SELECT c FROM ClickEvent c WHERE c.shortCode = :code " +
+    // "AND c.clickedAt >= :since ORDER BY c.clickedAt DESC")
+    // List<ClickEvent> findByShortCodeSince(@Param("code") String shortCode,
+    // @Param("since") LocalDateTime since);
 
     // Count clicks grouped by device
-    @Query("SELECT c.device, COUNT(c) FROM ClickEvent c WHERE c.shortCode = :code GROUP BY c.device")
-    List<Object[]> countByDevice(@Param("code") String shortCode);
+    // @Query("SELECT c.device, COUNT(c) FROM ClickEvent c WHERE c.shortCode = :code
+    // GROUP BY c.device")
+    // List<Object[]> countByDevice(@Param("code") String shortCode);
 }
