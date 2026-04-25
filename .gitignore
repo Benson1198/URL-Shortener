@@ -13,6 +13,13 @@ target/
 .springBeans
 .sts4-cache
 
+# Environment variables
+.env
+.properties
+
+# Keep the example file (safe to push)
+!.env.example
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
